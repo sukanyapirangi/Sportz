@@ -1,5 +1,5 @@
 import { WebSocket, WebSocketServer } from "ws";
-import { wsArcjet } from "../arcjet";
+import { wsArcjet } from "../arcjet.js";
 
 function sendJson(socket, payload){
     if(socket.readyState !== WebSocket.OPEN) return;
@@ -26,6 +26,12 @@ if(wsArcjet){
     try {
         const decision = await wsArcjet.protect(req);
         if(decision.isDenied()){
+            if (decision.reason.isRateLimit()) {
+                socket.write('HTTP/1.1 429 Too many requests');
+            }else{
+                socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+            }
+            socket.destroy();
            const code = decision.reason.isRateLimit() ? 1013 : 1008;
            const reason = decision.reason.isRateLimit() ? 'Rate limit exceeded': 'Access Denied';
            socket.close(code, reason);
