@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "../db/db.js";
 import { commentary } from "../db/schema.js";
-import { createCommentarySchema } from "../validations/commentary.js";
+import { createCommentarySchema,listcommentaryQuerySchema } from "../validations/commentary.js";
 import { matchParamsSchema } from "../validations/matches.js";
+const MAX_LIMIT = 100;
 
 export const commentaryRouter = Router({ mergeParams: true });
 
@@ -40,7 +41,7 @@ commentaryRouter.post("/", async (req, res) => {
   } = bodyParsed.data;
 
   try {
-    const [row] = await db
+    const [result] = await db
       .insert(commentary)
       .values({
         matchId,
@@ -55,7 +56,11 @@ commentaryRouter.post("/", async (req, res) => {
       })
       .returning();
 
-    return res.status(201).json({ data: row });
+      if (res.app.locals.broadcastCommentary) {
+        res.app.locals.broadcastCommentary(matchId, result);
+      }
+
+    return res.status(201).json({ data: result });
   } catch (err) {
     return res.status(500).json({
       error: "Failed to create commentary",
