@@ -6,6 +6,10 @@ export const MATCH_STATUS = {
   FINISHED: "finished",
 };
 
+export const matchParamsSchema = z.object({
+  id: z.coerce.number().int().positive(),
+});
+
 export const listMatchesQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
 });
